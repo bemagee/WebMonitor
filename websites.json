@@ -1,0 +1,7 @@
+{
+  "websites": [
+    {"name": "Google", "url": "https://www.google.com"},
+    {"name": "Example", "url": "https://www.example.com"},
+    {"name": "Invalid Site", "url": "https://this-site-does-not-exist.com"}
+  ]
+}
