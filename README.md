@@ -1,11 +1,13 @@
 # WebMonitor
 
-A simple Python CLI tool to monitor the status and response times of your favorite websites.
+A simple Python CLI tool to monitor the status, response times, and functional health (E2E) of your favorite websites.
 
 ## Features
 - Monitor multiple websites from a single JSON configuration file.
 - Check HTTP status codes and response times.
-- Clean console output.
+- **New:** Automatically run Playwright E2E tests for sites that are "UP".
+- Secure credential management using `.env` files.
+- Clean console output with status summaries.
 
 ## Prerequisites
 - Python 3.x
@@ -19,28 +21,39 @@ A simple Python CLI tool to monitor the status and response times of your favori
     ```
 
 2.  **Install dependencies:**
-    It's recommended to use a virtual environment:
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
     pip install -r requirements.txt
     ```
-    Or simply install directly:
+
+3.  **Install Playwright Browsers:**
     ```bash
-    pip install requests
+    playwright install
     ```
 
 ## Configuration
 
-The tool uses a JSON file to define which websites to monitor. Create a file (e.g., `websites.json`) with the following format:
+### 1. Websites (`websites.json`)
+The tool uses a JSON file to define which websites to monitor. You can optionally add a `test_script` property pointing to a Playwright script.
 
 ```json
 {
   "websites": [
     {"name": "Google", "url": "https://www.google.com"},
-    {"name": "My Blog", "url": "https://example.com"}
+    {
+      "name": "My App", 
+      "url": "https://app.example.com",
+      "test_script": "tests/login_test.py"
+    }
   ]
 }
+```
+
+### 2. Credentials (`.env`)
+Create a `.env` file in the root directory to store credentials used by your E2E scripts:
+
+```env
+TEST_USER=admin
+TEST_PASSWORD=secret
 ```
 
 ## Usage
@@ -53,9 +66,9 @@ python monitor.py websites.json
 
 ### Example Output
 ```
-NAME                 STATUS     CODE       TIME       URL
-----------------------------------------------------------------------
-Google               UP         200        145.23ms   https://www.google.com
-Example              UP         200        210.12ms   https://www.example.com
-Invalid Site         ERROR      N/A        N/A        https://this-site-does-not-exist.com
+NAME                 STATUS     CODE       TIME       E2E        URL
+-------------------------------------------------------------------------------------
+Google               UP         200        145.23ms   N/A        https://www.google.com
+Example with E2E     UP         200        210.12ms   PASS       https://www.example.com
+Invalid Site         ERROR      N/A        N/A        N/A        https://this-site-does-not-exist.com
 ```
