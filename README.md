@@ -1,74 +1,41 @@
 # WebMonitor
 
-A simple Python CLI tool to monitor the status, response times, and functional health (E2E) of your favorite websites.
+A Python CLI tool to monitor website status, performance, and functional health.
 
 ## Features
-- Monitor multiple websites from a single JSON configuration file.
-- Check HTTP status codes and response times.
-- **New:** Automatically run Playwright E2E tests for sites that are "UP".
-- Secure credential management using `.env` files.
-- Clean console output with status summaries.
-
-## Prerequisites
-- Python 3.x
-- `pip` (Python package installer)
+- **HTTP Monitoring:** Real-time checks for status codes and response times.
+- **E2E Testing:** Automated Playwright scripts for functional verification.
+- **Performance Metrics:** Measures Page Load and Action/Login times during E2E tests.
+- **Visual Diagnostics:** Automatically captures screenshots on E2E failures.
+- **Secure Credentials:** Integrated `.env` support for safe password management.
 
 ## Installation
 
-1.  **Clone or navigate to the project directory:**
-    ```bash
-    cd WebMonitor
-    ```
-
-2.  **Install dependencies:**
+1.  **Install dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
 
-3.  **Install Playwright Browsers:**
+2.  **Install Browsers:**
     ```bash
-    playwright install
+    playwright install chromium
     ```
-
-## Configuration
-
-### 1. Websites (`websites.json`)
-The tool uses a JSON file to define which websites to monitor. You can optionally add a `test_script` property pointing to a Playwright script.
-
-```json
-{
-  "websites": [
-    {"name": "Google", "url": "https://www.google.com"},
-    {
-      "name": "My App", 
-      "url": "https://app.example.com",
-      "test_script": "tests/login_test.py"
-    }
-  ]
-}
-```
-
-### 2. Credentials (`.env`)
-Create a `.env` file in the root directory to store credentials used by your E2E scripts:
-
-```env
-TEST_USER=admin
-TEST_PASSWORD=secret
-```
 
 ## Usage
 
-Run the tool by passing the path to your JSON configuration file:
+Run the monitor with your configuration file:
 
 ```bash
 python monitor.py websites.json
 ```
 
-### Example Output
-```
-NAME                 STATUS     CODE       TIME       E2E        URL
--------------------------------------------------------------------------------------
-Google               UP         200        145.23ms   N/A        https://www.google.com
-Example with E2E     UP         200        210.12ms   PASS       https://www.example.com
-Invalid Site         ERROR      N/A        N/A        N/A        https://this-site-does-not-exist.com
-```
+### Performance Metrics (`E2E_PERF` Column)
+- **L:** Page Load time (seconds)
+- **A:** Action time (e.g., search or login duration in seconds)
+
+### Diagnostics
+If an E2E test fails, look in the `screenshots/` directory for an image showing the site's state at the moment of failure.
+
+## Configuration
+- `websites.json`: List of sites and paths to their test scripts.
+- `.env`: Store `TEST_USER` and `TEST_PASSWORD`.

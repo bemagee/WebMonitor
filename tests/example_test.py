@@ -1,34 +1,34 @@
 import os
+import time
+import json
 from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv
 
-# Load credentials from .env
 load_dotenv()
 
 def run_test():
-    user = os.getenv("TEST_USER")
-    password = os.getenv("TEST_PASSWORD")
-    
-    print(f"Running test for user: {user}...")
-
+    metrics = {}
     with sync_playwright() as p:
-        # Launch browser (headless by default)
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         
         try:
-            # Navigate to example.com
+            start_load = time.time()
             page.goto("https://www.example.com")
+            metrics["Load"] = time.time() - start_load
             
-            # Simple check: Verify the <h1> tag contains "Example Domain"
+            start_action = time.time()
             h1_text = page.inner_text("h1")
-            assert h1_text == "Example Domain", f"Expected 'Example Domain', but got '{h1_text}'"
+            assert h1_text == "Example Domain"
+            metrics["Action"] = time.time() - start_action
             
-            print("Test passed: H1 matches!")
+            print(f"__METRICS__={json.dumps(metrics)}")
             
         except Exception as e:
+            os.makedirs("screenshots", exist_ok=True)
+            page.screenshot(path="screenshots/error_example.png")
             print(f"Test failed: {e}")
-            exit(1) # Non-zero exit code indicates failure
+            exit(1)
         finally:
             browser.close()
 

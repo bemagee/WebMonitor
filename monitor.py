@@ -4,6 +4,7 @@ import requests
 import time
 import subprocess
 import os
+import re
 
 def check_website(name, url):
     try:
@@ -36,27 +37,36 @@ def check_website(name, url):
 
 def run_e2e_test(script_path):
     if not os.path.exists(script_path):
-        return "MISSING"
+        return "MISSING", "N/A"
     
     try:
-        # Run the script and wait for it to finish
-        # We use 'py' launcher if on windows, or just 'python'
+        # Run the script and capture output
         cmd = ["py", script_path] if os.name == 'nt' else ["python3", script_path]
         result = subprocess.run(cmd, capture_output=True, text=True)
         
+        perf_metrics = "N/A"
+        # Search for metrics in stdout
+        metrics_match = re.search(r"__METRICS__=(.*)", result.stdout)
+        if metrics_match:
+            try:
+                metrics_data = json.loads(metrics_match.group(1))
+                # Format metrics (e.g., L:1.2s A:0.5s)
+                perf_metrics = " ".join([f"{k[0]}:{v:.2f}s" for k, v in metrics_data.items()])
+            except json.JSONDecodeError:
+                perf_metrics = "Parse Err"
+
         if result.returncode == 0:
-            return "PASS"
+            return "PASS", perf_metrics
         else:
-            return "FAIL"
+            return "FAIL", "See Screenshot"
     except Exception:
-        return "ERROR"
+        return "ERROR", "N/A"
 
 def main():
     parser = argparse.ArgumentParser(description="Monitor website status and response times.")
     parser.add_argument("config", help="Path to the JSON configuration file.")
     args = parser.parse_args()
 
-    # Get the directory of the config file to resolve relative paths
     config_dir = os.path.dirname(os.path.abspath(args.config))
 
     try:
@@ -67,9 +77,9 @@ def main():
         print(f"Error loading configuration file: {e}")
         return
 
-    # Header with new E2E column
-    print(f"{'NAME':<20} {'STATUS':<10} {'CODE':<10} {'TIME':<10} {'E2E':<10} {'URL'}")
-    print("-" * 85)
+    # Updated header with E2E_PERF column
+    print(f"{'NAME':<20} {'STATUS':<10} {'CODE':<10} {'TIME':<10} {'E2E':<10} {'E2E_PERF':<20} {'URL'}")
+    print("-" * 110)
 
     for site in websites:
         name = site.get("name", "Unknown")
@@ -77,7 +87,7 @@ def main():
         test_script = site.get("test_script")
         
         if not url:
-            print(f"{name:<20} {'SKIP':<10} {'N/A':<10} {'N/A':<10} {'N/A':<10} Missing URL")
+            print(f"{name:<20} {'SKIP':<10} {'N/A':<10} {'N/A':<10} {'N/A':<10} {'N/A':<20} Missing URL")
             continue
             
         result = check_website(name, url)
@@ -86,14 +96,13 @@ def main():
         code_display = result["code"]
         time_display = result["time"]
         e2e_display = "N/A"
+        perf_display = "N/A"
 
-        # Only run E2E if the site is UP and a script is defined
         if result["status"] == "UP" and test_script:
-            # Resolve relative script path relative to the config file
             full_script_path = os.path.join(config_dir, test_script)
-            e2e_display = run_e2e_test(full_script_path)
+            e2e_display, perf_display = run_e2e_test(full_script_path)
         
-        print(f"{name:<20} {status_display:<10} {code_display:<10} {time_display:<10} {e2e_display:<10} {url}")
+        print(f"{name:<20} {status_display:<10} {code_display:<10} {time_display:<10} {e2e_display:<10} {perf_display:<20} {url}")
 
 if __name__ == "__main__":
     main()
