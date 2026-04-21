@@ -5,6 +5,7 @@ import time
 import subprocess
 import os
 import re
+import sys
 
 def check_website(name, url):
     try:
@@ -81,6 +82,9 @@ def main():
     print(f"{'NAME':<20} {'STATUS':<10} {'CODE':<10} {'TIME':<10} {'E2E':<10} {'E2E_PERF':<20} {'URL'}")
     print("-" * 110)
 
+    # Track global success for AAP integration
+    global_success = True
+
     for site in websites:
         name = site.get("name", "Unknown")
         url = site.get("url")
@@ -98,11 +102,22 @@ def main():
         e2e_display = "N/A"
         perf_display = "N/A"
 
+        # Update global success based on HTTP status
+        if result["status"] != "UP":
+            global_success = False
+
         if result["status"] == "UP" and test_script:
             full_script_path = os.path.join(config_dir, test_script)
             e2e_display, perf_display = run_e2e_test(full_script_path)
+            
+            # Update global success based on E2E result
+            if e2e_display == "FAIL":
+                global_success = False
         
         print(f"{name:<20} {status_display:<10} {code_display:<10} {time_display:<10} {e2e_display:<10} {perf_display:<20} {url}")
+
+    if not global_success:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

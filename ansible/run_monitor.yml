@@ -1,0 +1,40 @@
+---
+- name: Execute WebMonitor Status Checks and E2E Tests
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    project_dir: "{{ playbook_dir }}/.."
+    python_bin: "python3" # Adjust if running on Windows nodes in AAP
+
+  tasks:
+    - name: Ensure Python dependencies are installed
+      ansible.builtin.pip:
+        requirements: "{{ project_dir }}/requirements.txt"
+        executable: pip3
+
+    - name: Ensure Playwright browsers are installed
+      ansible.builtin.command:
+        cmd: "{{ python_bin }} -m playwright install chromium"
+      register: playwright_install
+      changed_when: "'Downloading' in playwright_install.stdout"
+
+    - name: Run WebMonitor CLI
+      ansible.builtin.command:
+        cmd: "{{ python_bin }} monitor.py websites.json"
+        chdir: "{{ project_dir }}"
+      environment:
+        TEST_USER: "{{ lookup('env', 'TEST_USER') }}"
+        TEST_PASSWORD: "{{ lookup('env', 'TEST_PASSWORD') }}"
+      register: monitor_output
+      ignore_errors: true
+
+    - name: Display Monitor Report
+      ansible.builtin.debug:
+        msg: "{{ monitor_output.stdout_lines }}"
+
+    - name: Fail playbook if monitor detected issues
+      ansible.builtin.fail:
+        msg: "WebMonitor detected one or more DOWN sites or E2E failures. Check logs above."
+      when: monitor_output.rc != 0
