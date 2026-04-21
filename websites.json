@@ -6,6 +6,11 @@
       "url": "https://www.example.com",
       "test_script": "tests/example_test.py"
     },
+    {
+      "name": "Wikipedia",
+      "url": "https://www.wikipedia.org",
+      "test_script": "tests/wikipedia_cary.py"
+    },
     {"name": "Invalid Site", "url": "https://this-site-does-not-exist.com"}
   ]
 }
